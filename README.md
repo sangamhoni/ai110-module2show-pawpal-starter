@@ -121,23 +121,57 @@ python -m pytest
 python -m pytest -v
 ```
 
-Sample test output:
+**What the tests cover** (30 tests in `tests/test_pawpal.py`):
+
+- **Sorting:** tasks come back in clock order (including `"9:15"` vs `"12:00"`), untimed tasks go last, and priority ties go to the shorter task.
+- **Recurring tasks:** completing a daily task creates a new one due tomorrow (weekly: +7 days). An overdue task's next copy is due tomorrow, not in the past. `once` tasks don't repeat.
+- **Conflict detection:** tasks at the exact same time are flagged (same pet or different pets), as are partial overlaps and a long task overlapping a later, non-adjacent one. Back-to-back tasks, untimed tasks, and skipped tasks are not flagged.
+- **Planning:** only unfinished tasks due today are planned. A task that exactly fills the remaining time fits, and a shorter low-priority task can still fill leftover time. A pet with no tasks gives an empty plan, and running the plan twice doesn't duplicate it.
+- **Validation:** bad priority, duration, time, or frequency raises `ValueError`, and a failed edit leaves the task unchanged.
+
+Output of `python -m pytest -v`:
 
 ```
-tests/test_pawpal.py::test_mark_complete_changes_status PASSED           [  9%]
-tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED      [ 18%]
-tests/test_pawpal.py::test_time_is_zero_padded_and_sorts_correctly PASSED [ 27%]
-tests/test_pawpal.py::test_filter_by_pet_returns_only_that_pets_tasks PASSED [ 36%]
-tests/test_pawpal.py::test_completing_daily_task_creates_one_due_tomorrow PASSED [ 45%]
-tests/test_pawpal.py::test_completing_once_task_does_not_repeat PASSED   [ 54%]
-tests/test_pawpal.py::test_task_due_tomorrow_is_not_planned_today PASSED [ 63%]
-tests/test_pawpal.py::test_overlapping_tasks_are_reported_as_conflict PASSED [ 72%]
-tests/test_pawpal.py::test_back_to_back_tasks_are_not_a_conflict PASSED  [ 81%]
-tests/test_pawpal.py::test_same_time_same_pet_is_a_conflict PASSED       [ 90%]
-tests/test_pawpal.py::test_completing_weekly_task_creates_one_due_in_seven_days PASSED [100%]
+tests/test_pawpal.py::test_mark_complete_changes_status PASSED           [  3%]
+tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED      [  6%]
+tests/test_pawpal.py::test_time_is_zero_padded_and_sorts_correctly PASSED [ 10%]
+tests/test_pawpal.py::test_filter_by_pet_returns_only_that_pets_tasks PASSED [ 13%]
+tests/test_pawpal.py::test_completing_daily_task_creates_one_due_tomorrow PASSED [ 16%]
+tests/test_pawpal.py::test_completing_once_task_does_not_repeat PASSED   [ 20%]
+tests/test_pawpal.py::test_task_due_tomorrow_is_not_planned_today PASSED [ 23%]
+tests/test_pawpal.py::test_overlapping_tasks_are_reported_as_conflict PASSED [ 26%]
+tests/test_pawpal.py::test_back_to_back_tasks_are_not_a_conflict PASSED  [ 30%]
+tests/test_pawpal.py::test_same_time_same_pet_is_a_conflict PASSED       [ 33%]
+tests/test_pawpal.py::test_completing_weekly_task_creates_one_due_in_seven_days PASSED [ 36%]
+tests/test_pawpal.py::test_sort_by_time_returns_chronological_order PASSED [ 40%]
+tests/test_pawpal.py::test_sort_by_time_puts_untimed_tasks_last PASSED   [ 43%]
+tests/test_pawpal.py::test_sort_by_priority_breaks_ties_with_shorter_task PASSED [ 46%]
+tests/test_pawpal.py::test_overdue_daily_task_next_copy_is_due_tomorrow PASSED [ 50%]
+tests/test_pawpal.py::test_completing_same_title_twice_targets_the_new_copy PASSED [ 53%]
+tests/test_pawpal.py::test_completed_daily_task_leaves_nothing_due_today PASSED [ 56%]
+tests/test_pawpal.py::test_exact_same_time_different_pets_is_a_conflict PASSED [ 60%]
+tests/test_pawpal.py::test_long_task_conflicts_with_non_adjacent_later_task PASSED [ 63%]
+tests/test_pawpal.py::test_untimed_tasks_never_conflict PASSED           [ 66%]
+tests/test_pawpal.py::test_skipped_task_is_not_reported_as_conflict PASSED [ 70%]
+tests/test_pawpal.py::test_pet_with_no_tasks_gives_empty_plan PASSED     [ 73%]
+tests/test_pawpal.py::test_task_that_exactly_fills_time_is_planned PASSED [ 76%]
+tests/test_pawpal.py::test_shorter_lower_priority_task_fills_leftover_time PASSED [ 80%]
+tests/test_pawpal.py::test_generate_plan_twice_does_not_duplicate PASSED [ 83%]
+tests/test_pawpal.py::test_invalid_task_values_raise[bad_value0] PASSED  [ 86%]
+tests/test_pawpal.py::test_invalid_task_values_raise[bad_value1] PASSED  [ 90%]
+tests/test_pawpal.py::test_invalid_task_values_raise[bad_value2] PASSED  [ 93%]
+tests/test_pawpal.py::test_invalid_task_values_raise[bad_value3] PASSED  [ 96%]
+tests/test_pawpal.py::test_failed_edit_leaves_task_unchanged PASSED      [100%]
 
-============================== 11 passed in 0.03s ==============================
+============================== 30 passed in 0.03s ==============================
 ```
+
+**Confidence level: ★★★★☆ (4/5)**
+
+All 30 tests pass, and they cover the core scheduling rules plus the edge cases I was most worried about (same-time conflicts, overdue recurring tasks, empty pets, exact time limits). I'm not giving 5 stars because:
+- the Streamlit UI in `app.py` was only checked by hand, not with automated tests;
+- the tests use the real date (`date.today()`), so I haven't tested things like a run that crosses midnight;
+- the greedy planner is easy to explain but doesn't always fit the most tasks possible.
 
 ## 📐 Smarter Scheduling
 
