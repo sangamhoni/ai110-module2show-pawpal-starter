@@ -14,13 +14,24 @@ These are the three main things a user should be able to do in PawPal+:
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+My design has four classes:
+
+- **Owner** stores the owner's name, how many minutes they have for pet care each day, and their list of pets. It can add or remove a pet and give back all the tasks from every pet.
+- **Pet** stores the pet's name, its species, and its list of care tasks. It can add, edit, and remove tasks.
+- **Task** is one care activity, like a walk or a feeding. It stores the title, how long it takes, its priority (low, medium, or high), and whether it is done. It can turn its priority into a number for sorting and mark itself complete.
+- **Scheduler** makes the daily plan. It gets the owner's tasks, sorts them by priority, and adds them until the owner's time runs out. It keeps a list of planned tasks and a list of skipped tasks so it can explain the plan.
+
+An owner has many pets, a pet has many tasks, and the scheduler plans for one owner. I used dataclasses for Owner, Pet, and Task because they mostly hold data.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Yes. After I asked AI to review my skeleton, I made three changes:
+
+1. **Added `pet_name` to Task.** When the owner's tasks are combined into one list, the scheduler couldn't tell which pet each task was for. Now `Pet.add_task()` saves the pet's name on the task, so the plan can say "Walk (Mochi)".
+2. **Added a `PRIORITY_RANKS` table and a validation step for Task.** Priority was just text, so a typo like "High" or "urgent" would break sorting. Now there is one place that lists the allowed priorities, and Task will check its priority and duration when it is created.
+3. **Made the `generate_plan()` rules clearer.** It will clear old results before planning and skip tasks that are already done, so running it twice won't double the plan.
+
+I did not change the greedy approach (most important tasks first). It is simple and easy to explain, even though a long high-priority task can sometimes push out several shorter ones.
 
 ---
 
