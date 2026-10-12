@@ -33,7 +33,10 @@ class Task:
         self._validate()
 
     def _validate(self) -> None:
-        """Normalize priority and raise ValueError for any invalid field."""
+        """Normalize title and priority, and raise ValueError for any invalid field."""
+        self.title = self.title.strip()
+        if not self.title:
+            raise ValueError("title cannot be empty")
         self.priority = self.priority.strip().lower()
         if self.priority not in PRIORITY_RANKS:
             raise ValueError(
@@ -116,11 +119,15 @@ class Pet:
             raise
 
     def complete_task(self, title: str) -> Task | None:
-        """Mark a task done and, if it repeats, add and return its next occurrence.
+        """Complete the first unfinished task with this title (see complete())."""
+        return self.complete(self._find_task(title))
+
+    def complete(self, task: Task) -> Task | None:
+        """Mark this exact task done and, if it repeats, add and return its next occurrence.
 
         The finished task stays in the list as history; the new copy starts unfinished.
+        Use this instead of complete_task() when two tasks share a title.
         """
-        task = self._find_task(title)
         task.mark_complete()
         next_task = task.next_occurrence()
         if next_task is not None:

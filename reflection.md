@@ -39,8 +39,14 @@ I did not change the greedy approach (most important tasks first). It is simple 
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+My scheduler considers five things:
+1. **Time available:** the owner's minutes for the day. This is a hard limit, so a task that doesn't fit is skipped.
+2. **Priority:** high, medium, or low. High tasks are planned first.
+3. **Due date and status:** only unfinished tasks that are due today (or overdue) are planned.
+4. **Duration:** when two tasks have the same priority, the shorter one goes first so more tasks fit.
+5. **Preferred time:** used to sort the plan in clock order and to warn about overlaps, but not to choose which tasks are planned.
+
+I decided time and priority mattered most because those are the two things a busy owner can't ignore: there are only so many minutes, and things like medicine and feeding can't be skipped. Preferred times are softer, because the owner can usually move a walk, so I used them for warnings instead of hard rules.
 
 **b. Tradeoffs**
 
@@ -54,13 +60,23 @@ I think this is reasonable because the owner knows which task can move. Medicine
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used Claude Code in VS Code for every phase: brainstorming the UML, turning it into class skeletons, writing the scheduling logic, writing tests, connecting the Streamlit UI, and writing documentation.
+
+The most effective features were:
+- **Design review:** I asked it to review my skeleton for missing relationships, and it found that tasks didn't know which pet they belonged to, which is why I added `pet_name`.
+- **Plan-first editing:** I told it to always show me the exact code and ask before changing any file or running any command. That way I read every change before it happened.
+- **Running checks for me:** it ran `pytest`, `main.py`, and a headless Streamlit test after each change, so I could see proof that the code worked instead of trusting it.
+- **Explaining concepts:** for example, how a `lambda` key lets `sorted()` order `"HH:MM"` strings, and how `st.session_state` keeps my `Owner` object between reruns.
+
+I worked in one main chat session, but I kept it organized by following the project phases one step at a time (UML → skeleton → logic → tests → UI → docs) and finishing each step before starting the next. Because the session remembered earlier decisions, like my rule to ask before changing files, I didn't have to repeat myself. The downside is that one long conversation gets crowded. Next time I'd start a new session for each phase, with a short summary of the design, so each one stays focused.
+
+The most helpful prompts were specific ones like "review my skeleton for missing relationships or logic bottlenecks" and "suggest a lightweight conflict detection strategy that returns a warning instead of crashing."
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+When I added the first tests, the AI recommended adding a `conftest.py` file so plain `pytest` could find `pawpal_system.py`. I chose the other option instead: no extra file, and always run `python -m pytest`. It keeps the project simpler, and that's the command the assignment uses anyway. I also didn't let the AI change files on its own after the first step. I made it show me each change and wait for my approval.
+
+To verify suggestions, I read the proposed code before saying yes, then checked the results: the tests (32 passing), the `main.py` output, and the headless app test. Checking the output paid off. When the demo output was pasted into the README, the task column was too narrow and "Flea medicine" ran into the pet name, so we widened the column and pasted the output again.
 
 ---
 
@@ -68,13 +84,24 @@ I think this is reasonable because the owner knows which task can move. Medicine
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I have 32 automated tests that cover:
+- **Sorting:** tasks come back in clock order (even `"9:15"` vs `"12:00"`), untimed tasks go last, and priority ties go to the shorter task.
+- **Recurrence:** completing a daily task creates a new one due tomorrow (weekly: +7 days), an overdue task's next copy isn't in the past, and one-time tasks don't repeat.
+- **Conflicts:** same-time tasks (same pet or different pets) and partial overlaps are flagged, but back-to-back tasks, untimed tasks, and skipped tasks are not.
+- **Planning:** the time limit is respected exactly, leftover time gets filled, a pet with no tasks gives an empty plan, and running the plan twice doesn't duplicate it.
+- **Validation:** bad input raises a clear error, and a failed edit doesn't change the task.
+
+These tests matter because the scheduler's job is to make decisions the owner trusts. If sorting, recurrence, or conflict checks were wrong, the plan could hide a missed medicine or a double-booked time, and the owner wouldn't know.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+I'm fairly confident, about 4 out of 5. All 32 tests pass, and I also checked the app by running `main.py` and a headless Streamlit test.
+
+Next I would test:
+- tasks that cross midnight (for example 23:30 for 60 minutes), which my conflict check doesn't handle
+- a run that crosses midnight, by faking the date instead of using `date.today()`
+- two tasks with the same title for the same pet
+- automated tests for the Streamlit UI itself
 
 ---
 
@@ -82,12 +109,15 @@ I think this is reasonable because the owner knows which task can move. Medicine
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I'm most satisfied that the design stayed clean from start to finish. The four classes from my first UML are still the four classes in the final code, and each new feature fit into the class it belonged to: recurrence in `Pet` and `Task`, sorting, filtering, and conflicts in `Scheduler`. I'm also happy with the conflict warnings, because they catch real problems without crashing or taking control away from the owner.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+- **Save data:** right now pets and tasks disappear when the browser page reloads. I'd save them to a JSON file.
+- **Edit and remove in the app:** my classes have `edit_task`, `remove_task`, and `remove_pet`, but the UI doesn't use them yet.
+- **Link tasks to pets better:** tasks point to their pet by name, so renaming a pet would break the link. I'd use an ID or a direct reference.
+- **Smarter planning:** the greedy planner is easy to explain, but it doesn't always fit the most tasks. I could also suggest a free time slot when there's a conflict instead of only warning.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+Being the "lead architect" means the AI writes code fast, but I decide what the system should be. I set the design (four classes and their responsibilities), I set the rules (show me changes before making them), and I made the final calls, like choosing `python -m pytest` over an extra config file, and warnings instead of automatic rescheduling. The AI was most useful when I asked it specific questions and then checked its work with tests and real output. I learned that a clear design up front makes AI help much better, because every suggestion has to fit into a structure I already understand.

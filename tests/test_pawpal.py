@@ -185,6 +185,18 @@ def test_completed_daily_task_leaves_nothing_due_today():
     assert scheduler.generate_plan() == []
 
 
+def test_complete_exact_task_when_titles_repeat():
+    pet = Pet("Mochi", "dog")
+    pet.add_task(Task("Walk", 30, "high", time="07:30"))
+    pet.add_task(Task("Walk", 30, "high", time="18:00"))
+    evening_walk = pet.tasks[1]
+
+    pet.complete(evening_walk)
+
+    assert evening_walk.completed is True
+    assert pet.tasks[0].completed is False
+
+
 # --- Conflict detection ---
 
 def test_exact_same_time_different_pets_is_a_conflict():
@@ -279,7 +291,13 @@ def test_generate_plan_twice_does_not_duplicate():
 
 @pytest.mark.parametrize(
     "bad_value",
-    [{"priority": "urgent"}, {"duration_minutes": 0}, {"time": "25:00"}, {"frequency": "monthly"}],
+    [
+        {"priority": "urgent"},
+        {"duration_minutes": 0},
+        {"time": "25:00"},
+        {"frequency": "monthly"},
+        {"title": "  "},
+    ],
 )
 def test_invalid_task_values_raise(bad_value):
     values = {"title": "Walk", "duration_minutes": 30, "priority": "high"} | bad_value
