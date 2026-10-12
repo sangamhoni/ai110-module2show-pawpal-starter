@@ -49,49 +49,106 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 Output of `python main.py`:
 
 ```
+Completed 'Litter box' -> next one due 2026-10-12
+
+All tasks (order added):
+  18:00  Evening walk   Mochi  todo  due 2026-10-11
+  08:00  Breakfast      Mochi  todo  due 2026-10-11
+  07:30  Morning walk   Mochi  todo  due 2026-10-11
+  07:30  Flea medicine  Mochi  todo  due 2026-10-11
+  19:00  Brushing       Luna   todo  due 2026-10-11
+  12:00  Litter box     Luna   done  due 2026-10-11
+  07:45  Medication     Luna   todo  due 2026-10-11
+  08:00  Breakfast      Luna   todo  due 2026-10-11
+  12:00  Litter box     Luna   todo  due 2026-10-12
+
+Sorted by time:
+  07:30  Morning walk   Mochi  todo  due 2026-10-11
+  07:30  Flea medicine  Mochi  todo  due 2026-10-11
+  07:45  Medication     Luna   todo  due 2026-10-11
+  08:00  Breakfast      Mochi  todo  due 2026-10-11
+  08:00  Breakfast      Luna   todo  due 2026-10-11
+  12:00  Litter box     Luna   done  due 2026-10-11
+  12:00  Litter box     Luna   todo  due 2026-10-12
+  18:00  Evening walk   Mochi  todo  due 2026-10-11
+  19:00  Brushing       Luna   todo  due 2026-10-11
+
+Mochi's tasks:
+  07:30  Morning walk   Mochi  todo  due 2026-10-11
+  07:30  Flea medicine  Mochi  todo  due 2026-10-11
+  08:00  Breakfast      Mochi  todo  due 2026-10-11
+  18:00  Evening walk   Mochi  todo  due 2026-10-11
+
+Completed tasks:
+  12:00  Litter box     Luna   done  due 2026-10-11
+
+Luna's unfinished tasks:
+  07:45  Medication     Luna   todo  due 2026-10-11
+  08:00  Breakfast      Luna   todo  due 2026-10-11
+  12:00  Litter box     Luna   todo  due 2026-10-12
+  19:00  Brushing       Luna   todo  due 2026-10-11
+
 ==================================================
   Today's Schedule for Jordan
 ==================================================
   Time   Task            Pet      Min  Priority
   ----------------------------------------------
+  07:30  Flea medicine   Mochi      5  high
   07:30  Morning walk    Mochi     30  high
+  07:45  Medication      Luna       5  high
+  08:00  Breakfast       Luna       5  high
   08:00  Breakfast       Mochi     10  high
-  09:00  Medication      Luna       5  high
-  12:00  Litter box      Luna      10  medium
   18:00  Evening walk    Mochi     30  medium
   ----------------------------------------------
   85 of 90 minutes used
 
   Skipped (not enough time):
     - Brushing (Luna, 20 min, low)
+
+  Time conflicts (one person can't do both):
+    - Flea medicine (Mochi) at 07:30 overlaps Morning walk (Mochi) at 07:30
+    - Morning walk (Mochi) at 07:30 overlaps Medication (Luna) at 07:45
+    - Breakfast (Luna) at 08:00 overlaps Breakfast (Mochi) at 08:00
 ```
 
 ## 🧪 Testing PawPal+
 
 ```bash
-# Run the full test suite:
-pytest
+# Run the full test suite (from the project folder, with .venv activated):
+python -m pytest
 
-# Run with coverage:
-pytest --cov
+# Show each test by name:
+python -m pytest -v
 ```
 
 Sample test output:
 
 ```
-# Paste your pytest output here
+tests/test_pawpal.py::test_mark_complete_changes_status PASSED           [  9%]
+tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED      [ 18%]
+tests/test_pawpal.py::test_time_is_zero_padded_and_sorts_correctly PASSED [ 27%]
+tests/test_pawpal.py::test_filter_by_pet_returns_only_that_pets_tasks PASSED [ 36%]
+tests/test_pawpal.py::test_completing_daily_task_creates_one_due_tomorrow PASSED [ 45%]
+tests/test_pawpal.py::test_completing_once_task_does_not_repeat PASSED   [ 54%]
+tests/test_pawpal.py::test_task_due_tomorrow_is_not_planned_today PASSED [ 63%]
+tests/test_pawpal.py::test_overlapping_tasks_are_reported_as_conflict PASSED [ 72%]
+tests/test_pawpal.py::test_back_to_back_tasks_are_not_a_conflict PASSED  [ 81%]
+tests/test_pawpal.py::test_same_time_same_pet_is_a_conflict PASSED       [ 90%]
+tests/test_pawpal.py::test_completing_weekly_task_creates_one_due_in_seven_days PASSED [100%]
+
+============================== 11 passed in 0.03s ==============================
 ```
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | `Scheduler.sort_by_priority()`, `Scheduler.sort_by_time()` | Planning picks high priority first (shorter task wins a tie). Display uses clock order via a `sorted()` lambda key on zero-padded `"HH:MM"` strings; untimed tasks go last. |
+| Filtering | `Scheduler.filter_tasks(pet_name, completed)`, `Scheduler.generate_plan()` | Filter by pet, completion status, or both. The plan only uses unfinished tasks due today and skips any that don't fit in the owner's remaining minutes. |
+| Conflict handling | `Scheduler.find_conflicts()` | Sorts timed tasks by start, then flags any task that starts before an earlier one ends (same pet or different pets). Returns warning messages instead of raising errors; nothing is moved automatically. |
+| Recurring tasks | `Pet.complete_task()`, `Task.next_occurrence()` | Completing a `daily` or `weekly` task adds a new copy due `+1` or `+7` days (via `timedelta`). `once` tasks don't repeat. |
+
+Run `python main.py` to see each feature in action. Tasks are added out of order, filtered by pet and status, a daily task repeats when completed, and overlapping tasks produce warnings.
 
 ## 📸 Demo Walkthrough
 

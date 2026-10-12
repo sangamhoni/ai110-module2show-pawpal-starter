@@ -44,8 +44,9 @@ I did not change the greedy approach (most important tasks first). It is simple 
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+My scheduler picks tasks by priority first and only checks times afterward to warn about overlaps. It does not move tasks to fix a conflict. For example, if Mochi's walk is 07:30–08:00 and Luna's medicine is at 07:45, both stay in the plan and the app shows a warning: "Morning walk (Mochi) at 07:30 overlaps Medication (Luna) at 07:45."
+
+I think this is reasonable because the owner knows which task can move. Medicine might need to happen at an exact time, but a walk is usually flexible. If the app moved tasks on its own, it would have to guess, and it might push back something important without the owner noticing. A warning is simple, never crashes the program, and is easy to test. I did make the check look at the full duration of each task, not just exact time matches, because a 30-minute walk at 07:30 still blocks a task at 07:45 even though the start times are different.
 
 ---
 
